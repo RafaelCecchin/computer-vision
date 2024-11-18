@@ -1,30 +1,31 @@
-import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
+import cv2
+import numpy as np
 
-sourceVideo = os.getenv("SOURCEVIDEO")
-
-class MyServer(BaseHTTPRequestHandler):
+class CamHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=--jpgboundary')
         self.end_headers()
-        html = (
-            "<html> \
-                <head> \
-                </head> \
-                <body>"
-                    f"<iframe src='{sourceVideo}' width='100%' height='100%'></iframe> \
-                </body> \
-            </html>"
-        )
-        self.wfile.write(bytes(html, "utf-8"))
 
-def run(server_class=HTTPServer, handler_class=MyServer):
-    server_address = ('', 80)
-    httpd = server_class(server_address, handler_class)
-    print("Starting httpd...")
-    httpd.serve_forever()
+        cap = cv2.VideoCapture(os.getenv('SOURCEVIDEO'))
 
-if __name__ == "__main__":
-    run()
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
+            ret, encimg = cv2.imencode('.jpg', frame)
+            self.wfile.write(bytearray('--jpgboundary\r\n', 'utf-8'))
+            self.send_header('Content-type', 'image/jpeg')
+            self.send_header('Content-length', str(encimg.size))
+            self.end_headers()
+            self.wfile.write(encimg.tobytes())
+
+def run():
+    server = HTTPServer(('', 80), CamHandler)
+    print('start')
+    server.serve_forever()
+
+run()
