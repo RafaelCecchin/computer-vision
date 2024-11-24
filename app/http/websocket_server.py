@@ -3,9 +3,12 @@ import cv2
 import asyncio
 import websockets
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
 async def video_stream(websocket):
     cap = cv2.VideoCapture(os.getenv('SOURCEVIDEO'))
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    monica = cv2.imread(os.path.join(base_dir, "../assets/monica.png"))
 
     try:
         while True:
@@ -20,7 +23,8 @@ async def video_stream(websocket):
             faces = face_cascade.detectMultiScale(frame_gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
             
             for (x, y, w, h) in faces:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                monica_scaled = cv2.resize(monica, (w, h))
+                frame[y:y+h, x:x+w] = monica_scaled
 
             ret, encimg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
 
@@ -39,3 +43,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
