@@ -10,6 +10,6 @@ services:
     working_dir: /app
     env_file:
       - .env
-    command: python main.py
+    command: watchmedo auto-restart --debug-force-polling --directory=/app --pattern="*.py" --recursive -- python main.py
     ports:
       - "80:80"

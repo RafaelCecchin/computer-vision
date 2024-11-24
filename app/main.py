@@ -16,7 +16,9 @@ class CamHandler(BaseHTTPRequestHandler):
             if not ret:
                 break
 
-            ret, encimg = cv2.imencode('.jpg', frame)
+            modified_frame = frame
+            ret, encimg = cv2.imencode('.jpg', modified_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+
             self.wfile.write(bytearray('--jpgboundary\r\n', 'utf-8'))
             self.send_header('Content-type', 'image/jpeg')
             self.send_header('Content-length', str(encimg.size))
