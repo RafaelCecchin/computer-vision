@@ -24,7 +24,8 @@ class CamHandler(BaseHTTPRequestHandler):
             self.wfile.write(encimg.tobytes())
 
 def run():
-    server = HTTPServer(('', 80), CamHandler)
+    port = int(os.getenv('WEBSITE_PORT', 80))
+    server = HTTPServer(('0.0.0.0', port), CamHandler)
     print('start')
     server.serve_forever()
 
