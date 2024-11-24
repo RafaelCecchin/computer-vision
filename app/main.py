@@ -1,34 +1,22 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import os
-import cv2
-import numpy as np
+import subprocess
+import signal
 
-class CamHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=--jpgboundary')
-        self.end_headers()
+def main():
+    processes = []
+    try:
+        flask_process = subprocess.Popen(["python", "http/flask_server.py"])
+        websocket_process = subprocess.Popen(["python", "http/websocket_server.py"])
+        processes.extend([flask_process, websocket_process])
+        
+        for process in processes:
+            process.wait()
+    except KeyboardInterrupt:
+        print("Interrompido. Encerrando servidores...")
+        for process in processes:
+            process.terminate()
+    finally:
+        for process in processes:
+            process.wait()
 
-        cap = cv2.VideoCapture(os.getenv('SOURCEVIDEO'))
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            modified_frame = frame
-            ret, encimg = cv2.imencode('.jpg', modified_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
-
-            self.wfile.write(bytearray('--jpgboundary\r\n', 'utf-8'))
-            self.send_header('Content-type', 'image/jpeg')
-            self.send_header('Content-length', str(encimg.size))
-            self.end_headers()
-            self.wfile.write(encimg.tobytes())
-
-def run():
-    port = int(os.getenv('WEBSITE_PORT', 80))
-    server = HTTPServer(('0.0.0.0', port), CamHandler)
-    print('start')
-    server.serve_forever()
-
-run()
+if __name__ == '__main__':
+    main()

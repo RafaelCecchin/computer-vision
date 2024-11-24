@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WebSocket Test</title>
+    </head>
+    <body>
+        <img id="image" alt="Streaming" />
+    </body>
+    <script>
+        const image = document.getElementById('image');
+        let websocket = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        const reconnectDelay = 250;
+
+        function connectWebSocket() {
+            console.log("Tentando conectar ao WebSocket...");
+            websocket = new WebSocket(`ws://localhost:{{ ws_port }}`);
+
+            websocket.onopen = function () {
+                console.log("Conexão WebSocket estabelecida");
+                reconnectAttempts = 0;
+            };
+
+            websocket.onmessage = function (event) {
+                const blob = new Blob([event.data], { type: 'image/jpeg' });
+                const reader = new FileReader();
+                reader.onload = function () {
+                    image.src = reader.result;
+                };
+                reader.readAsDataURL(blob);
+            };
+
+            websocket.onclose = function () {
+                console.warn("Conexão WebSocket encerrada");
+                attemptReconnect();
+            };
+
+            websocket.onerror = function (error) {
+                console.error("Erro no WebSocket:", error);
+                websocket.close();
+            };
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                const delay = reconnectDelay * Math.pow(2, reconnectAttempts);
+                console.log(`Tentando reconectar em ${delay / 1000} segundos...`);
+                setTimeout(() => {
+                    reconnectAttempts++;
+                    connectWebSocket();
+                }, delay);
+            } else {
+                console.error("Número máximo de tentativas de reconexão atingido.");
+            }
+        }
+
+        connectWebSocket();
+    </script>
+</html>
+
