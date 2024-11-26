@@ -8,7 +8,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 async def video_stream(websocket):
     cap = cv2.VideoCapture(os.getenv('SOURCEVIDEO'))
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    monica = cv2.imread(os.path.join(base_dir, "../assets/monica.png"))
+    monica = cv2.imread(os.path.join(base_dir, "../assets/iron-man.jpg"))
 
     try:
         while True:
