@@ -36,9 +36,15 @@ def color_difference(c1, c2):
 async def video_stream(websocket):
     cap = cv2.VideoCapture(os.getenv('SOURCEVIDEO'))
 
+    color_red = (0, 0, 255)
+    color_green = (0, 255, 0)
+
     frame_count = 0
+
     last_dominant_color = (0,0,0)
-    has_paper_color = (0,0,255)
+
+    has_paper = False
+    has_paper_color = color_red
     
     color_stealth_with_paper = (255, 255, 255)
     color_tolerance = 12
@@ -47,20 +53,21 @@ async def video_stream(websocket):
         while True:
             ret, frame = cap.read()
             if not ret:
-                break
+                continue
             
             frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
             frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
             
+            frame_count = frame_count + 1
+
             # Last dominant color
             x_last, y_last, w_last, h_last = 5, 5, 150, 150
             cv2.rectangle(frame, (x_last, y_last), (x_last + w_last, y_last + h_last), last_dominant_color, cv2.FILLED)
             
             # Read area
             x_read, y_read, w_read, h_read = 325, 225, 110, 140
-            color_read = (0, 255, 0)
             thickness_read = 2
-            cv2.rectangle(frame, (x_read, y_read), (x_read + w_read, y_read + h_read), color_read, thickness_read)
+            cv2.rectangle(frame, (x_read, y_read), (x_read + w_read, y_read + h_read), color_green, thickness_read)
 
             # Has paper or not
             x_paper, y_paper, w_paper, h_paper = 305, 5, 150, 150
@@ -69,11 +76,12 @@ async def video_stream(websocket):
             # Show color green if has paper and show color red if not
             roi = frame[y_read:y_read + h_read, x_read:x_read + w_read]
             dominant_color = get_dominant_color(roi)
-            last_dominant_color = dominant_color        
+            last_dominant_color = dominant_color   
+            
             diff_with_paper = color_difference(dominant_color, color_stealth_with_paper)
-            has_paper_color = (0,255,0) if diff_with_paper < color_tolerance else (0,0,255)
-            print(last_dominant_color)
-                
+            has_paper = diff_with_paper < color_tolerance
+            has_paper_color = color_green if has_paper else color_red
+
             ret, encimg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
 
             try:
