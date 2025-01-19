@@ -2,3 +2,4 @@ opencv-python
 watchdog
 flask
 websockets
+numpy

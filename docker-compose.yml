@@ -14,3 +14,5 @@ services:
     ports:
       - "${WEBSOCKET_PORT}:${WEBSOCKET_PORT}"
       - "${WEBSITE_PORT}:${WEBSITE_PORT}"
+    stdin_open: true
+    tty: true
