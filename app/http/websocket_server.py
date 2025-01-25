@@ -33,6 +33,12 @@ def get_dominant_color(roi):
 def color_difference(c1, c2):
     return np.linalg.norm(np.array(c1) - np.array(c2))
 
+async def save_image(encimg, frame_count):
+    image_name = f'./images/{frame_count}.jpg'
+    print(f'Salvando imagem {image_name}')
+    with open(image_name, 'wb') as f:
+        f.write(encimg.tobytes())
+
 async def video_stream(websocket):
     cap = cv2.VideoCapture(os.getenv('SOURCEVIDEO'))
 
@@ -46,8 +52,8 @@ async def video_stream(websocket):
     has_paper = False
     has_paper_color = color_red
     
-    color_stealth_with_paper = (255, 255, 255)
-    color_tolerance = 12
+    color_stealth_with_paper = (182, 208, 198)
+    color_tolerance = 20
 
     try:
         while True:
@@ -56,7 +62,7 @@ async def video_stream(websocket):
                 continue
             
             frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            #frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
             
             frame_count = frame_count + 1
 
@@ -65,12 +71,12 @@ async def video_stream(websocket):
             cv2.rectangle(frame, (x_last, y_last), (x_last + w_last, y_last + h_last), last_dominant_color, cv2.FILLED)
             
             # Read area
-            x_read, y_read, w_read, h_read = 325, 225, 110, 140
+            x_read, y_read, w_read, h_read = 520, 300, 110, 140
             thickness_read = 2
             cv2.rectangle(frame, (x_read, y_read), (x_read + w_read, y_read + h_read), color_green, thickness_read)
 
             # Has paper or not
-            x_paper, y_paper, w_paper, h_paper = 305, 5, 150, 150
+            x_paper, y_paper, w_paper, h_paper = 500, 5, 150, 150
             cv2.rectangle(frame, (x_paper, y_paper), (x_paper + w_paper, y_paper + h_paper), has_paper_color, cv2.FILLED)
             
             # Show color green if has paper and show color red if not
@@ -81,8 +87,12 @@ async def video_stream(websocket):
             diff_with_paper = color_difference(dominant_color, color_stealth_with_paper)
             has_paper = diff_with_paper < color_tolerance
             has_paper_color = color_green if has_paper else color_red
-
-            ret, encimg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+            
+            if has_paper:
+                ret, img_roi = cv2.imencode('.jpg', roi, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+                await save_image(img_roi, frame_count)
+            
+            ret, encimg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
             try:
                 await websocket.send(encimg.tobytes())
@@ -99,3 +109,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

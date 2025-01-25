@@ -3,3 +3,4 @@ watchdog
 flask
 websockets
 numpy
+pytesseract
